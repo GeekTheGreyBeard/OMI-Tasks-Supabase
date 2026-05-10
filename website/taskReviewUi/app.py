@@ -2,13 +2,14 @@ import html
 import json
 import os
 import secrets
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 import psycopg
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from pydantic import BaseModel, Field
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 UI_USER = os.environ.get("TASK_UI_USER", "admin")
@@ -22,6 +23,19 @@ PAGE_SIZE = 50
 
 app = FastAPI(title=APP_TITLE)
 security = HTTPBasic()
+
+
+class CandidateIngest(BaseModel):
+    source_key: str = Field(default="omi", max_length=64)
+    source_event_id: Optional[str] = Field(default=None, max_length=256)
+    source_conversation_id: Optional[str] = Field(default=None, max_length=256)
+    proposed_title: str = Field(min_length=1, max_length=500)
+    proposed_description: Optional[str] = None
+    proposed_due_at: Optional[str] = None
+    proposed_priority: str = Field(default="normal")
+    proposed_tags: list[str] = Field(default_factory=list)
+    confidence: Optional[float] = None
+    evidence: dict[str, Any] = Field(default_factory=dict)
 
 
 def auth(creds: HTTPBasicCredentials = Depends(security)):
@@ -112,6 +126,52 @@ def source_id(source_key="manual"):
     if not row:
         raise HTTPException(500, f"source system {source_key} is missing; apply schema first")
     return row["source_system_id"]
+
+
+@app.post("/api/candidates")
+@app.post("/tasks/api/candidates")
+def api_create_candidate(payload: CandidateIngest, user: str = Depends(auth)):
+    priority = payload.proposed_priority or "normal"
+    if priority not in PRIORITIES:
+        raise HTTPException(400, f"priority must be one of: {', '.join(PRIORITIES)}")
+    tags = [clean_tag(t) for t in payload.proposed_tags if clean_tag(t)]
+    if len(tags) > 32:
+        raise HTTPException(400, "A maximum of 32 tags may be attached to one task candidate")
+    sid = source_id(payload.source_key or "omi")
+    row = exec_sql(
+        """
+        insert into tasks.task_candidates(
+          source_system_id, source_event_id, source_conversation_id,
+          proposed_title, proposed_description, proposed_due_at,
+          proposed_priority, proposed_tags, confidence, evidence
+        ) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)
+        on conflict (source_system_id, source_event_id, proposed_title)
+        do update set
+          proposed_description = excluded.proposed_description,
+          proposed_due_at = excluded.proposed_due_at,
+          proposed_priority = excluded.proposed_priority,
+          proposed_tags = excluded.proposed_tags,
+          confidence = excluded.confidence,
+          evidence = excluded.evidence,
+          review_status = 'needs_review',
+          updated_at = now()
+        returning candidate_id, review_status
+        """,
+        (
+            sid,
+            payload.source_event_id,
+            payload.source_conversation_id,
+            payload.proposed_title.strip(),
+            payload.proposed_description,
+            payload.proposed_due_at or None,
+            priority,
+            tags,
+            payload.confidence,
+            json.dumps(payload.evidence or {}),
+        ),
+    )
+    audit(user, "api_candidate_ingest", "task_candidate", row["candidate_id"], after={"title": payload.proposed_title, "source_key": payload.source_key})
+    return {"ok": True, "candidate_id": str(row["candidate_id"]), "review_status": row["review_status"]}
 
 
 def layout(title, body, user):

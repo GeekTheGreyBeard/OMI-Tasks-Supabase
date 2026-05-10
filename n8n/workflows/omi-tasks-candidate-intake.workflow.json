@@ -1,0 +1,80 @@
+{
+  "name": "PatriciAI Managed - OMI Tasks Candidate Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "omi-tasks-candidate-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-omi-tasks-candidate-intake",
+      "name": "Omi Task Candidate Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "omi-tasks-candidate-intake"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json.body ?? $json;\nconst title = input.proposed_title || input.title || input.task || input.summary;\nif (!title) { throw new Error('Missing proposed_title/title/task/summary'); }\nreturn [{ json: {\n  source_key: input.source_key || 'omi',\n  source_event_id: input.source_event_id || input.event_id || input.id || null,\n  source_conversation_id: input.source_conversation_id || input.conversation_id || input.session_id || null,\n  proposed_title: String(title).slice(0, 500),\n  proposed_description: input.proposed_description || input.description || input.text || '',\n  proposed_due_at: input.proposed_due_at || input.due_at || null,\n  proposed_priority: input.proposed_priority || input.priority || 'normal',\n  proposed_tags: Array.isArray(input.proposed_tags) ? input.proposed_tags : (Array.isArray(input.tags) ? input.tags : []),\n  confidence: input.confidence ?? null,\n  evidence: { source: 'n8n.splat-i.io', original_payload: input }\n}}];"
+      },
+      "id": "normalize-omi-task-candidate",
+      "name": "Normalize Candidate Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [260, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://10.100.101.158:8098/tasks/api/candidates",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "create-task-candidate",
+      "name": "Create Task Candidate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [540, 0],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "REPLACE_WITH_TASK_UI_BASIC_AUTH_CREDENTIAL_ID",
+          "name": "OMI Tasks UI Basic Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, taskCandidate: $json }) }}",
+        "options": {}
+      },
+      "id": "respond-created",
+      "name": "Respond Created",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 0]
+    }
+  ],
+  "connections": {
+    "Omi Task Candidate Webhook": {
+      "main": [[{ "node": "Normalize Candidate Payload", "type": "main", "index": 0 }]]
+    },
+    "Normalize Candidate Payload": {
+      "main": [[{ "node": "Create Task Candidate", "type": "main", "index": 0 }]]
+    },
+    "Create Task Candidate": {
+      "main": [[{ "node": "Respond Created", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

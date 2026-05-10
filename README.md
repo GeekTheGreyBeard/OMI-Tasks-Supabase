@@ -168,7 +168,7 @@ Open n8n at:
 http://SERVER_IP:5679
 ```
 
-This first pass does not ship workflow exports yet; the n8n container is included as a compatible local workspace for building candidate extraction flows.
+This repo ships a starter n8n workflow export at `n8n/workflows/omi-tasks-candidate-intake.workflow.json`. Import it into n8n, attach an HTTP Basic Auth credential matching the task UI credentials, then activate it when ready. The optional local n8n container is included as a compatible workspace for adapting that flow.
 
 ### Start, stop, and status
 
@@ -260,3 +260,27 @@ The validation script checks Python syntax, expected files, public-facing docs w
 ## License
 
 MIT License. See [LICENSE](LICENSE).
+
+
+### API candidate intake
+
+The review UI exposes a Basic Auth protected JSON endpoint for workflow-created candidates:
+
+```text
+POST /tasks/api/candidates
+```
+
+Minimal payload:
+
+```json
+{
+  "source_key": "omi",
+  "source_event_id": "omi-event-id",
+  "proposed_title": "Follow up on appointment scheduling",
+  "proposed_description": "Evidence-backed candidate extracted from Omi conversation text.",
+  "proposed_priority": "normal",
+  "proposed_tags": ["omi", "follow-up"],
+  "confidence": 0.72,
+  "evidence": {"source": "omi"}
+}
+```
