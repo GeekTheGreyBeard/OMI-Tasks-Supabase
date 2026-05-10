@@ -268,6 +268,7 @@ def task_home_body():
         <a class='button' href='/tasks/review'>Review task candidates</a>
         <a class='button' href='/tasks/primary'>Primary tasks</a>
         <a class='button' href='/tasks/new'>Create task</a>
+        <a class='button' href='http://patriciai-ui.gtgb.io/'>Back to PatriciAI Home</a>
       </div>
     </section>
     <section class='grid'>
