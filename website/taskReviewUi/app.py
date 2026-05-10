@@ -189,16 +189,37 @@ def layout(title, body, user):
 <html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
 <title>{esc(title)} · {esc(APP_TITLE)}</title>
 <style>
-:root {{ color-scheme: light dark; --border:#9995; --muted:#777; --card:#7771; }}
-body {{ font-family: system-ui, -apple-system, Segoe UI, sans-serif; max-width: 1180px; margin: 32px auto; padding: 0 18px; line-height: 1.45; }}
-a {{ color: inherit; }} nav {{ display:flex; flex-wrap:wrap; gap: 10px; margin: 0 0 24px; }}
-nav a, button, .button {{ border:1px solid var(--border); border-radius:10px; padding:8px 12px; background:var(--card); text-decoration:none; cursor:pointer; }}
-.card {{ border:1px solid var(--border); border-radius:14px; padding:16px; margin:14px 0; background:var(--card); }}
-.grid {{ display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px; }}
-input, textarea, select {{ width:100%; box-sizing:border-box; padding:8px; border:1px solid var(--border); border-radius:8px; background:transparent; color:inherit; }}
-textarea {{ min-height: 110px; }} .row {{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }}
-.muted {{ color:var(--muted); }} .pill {{ display:inline-block; border:1px solid var(--border); border-radius:999px; padding:2px 8px; margin:2px; font-size:.9em; }}
-.danger {{ border-color:#b44; }} table {{ width:100%; border-collapse: collapse; }} td,th {{ border-bottom:1px solid var(--border); padding:8px; text-align:left; vertical-align:top; }}
+:root {{ --bg:#080b18; --panel:rgba(18,25,48,.78); --panel2:rgba(30,39,76,.72); --text:#edf3ff; --muted:#9fb0d0; --accent:#8a5cff; --accent2:#20e3b2; --danger:#ff5c8a; --warn:#ffcc66; --ok:#42f59b; --border:rgba(255,255,255,.11); --shadow:0 20px 70px rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.08); }}
+* {{ box-sizing:border-box; }}
+body {{ margin:0; min-height:100vh; font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; color:var(--text); background: radial-gradient(circle at 18% 8%, #31206a 0, transparent 29rem), radial-gradient(circle at 82% 0%, #0a6b70 0, transparent 24rem), linear-gradient(135deg,#070914,#101427 55%,#080b18); overflow-x:hidden; line-height:1.5; padding:36px 20px 72px; }}
+body:before {{ content:""; position:fixed; inset:0; pointer-events:none; background-image:linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px); background-size:56px 56px; mask-image:linear-gradient(to bottom, rgba(0,0,0,.7), transparent 75%); }}
+body > * {{ max-width:1180px; margin-left:auto; margin-right:auto; position:relative; }}
+a {{ color:#9bdcff; text-decoration:none; }}
+header {{ padding:28px; margin-bottom:18px; background:linear-gradient(180deg,var(--panel),rgba(10,14,32,.82)); border:1px solid var(--border); border-radius:28px; box-shadow:var(--shadow); backdrop-filter:blur(18px); }}
+h1 {{ margin:0 0 10px; font-size:clamp(34px, 6vw, 68px); line-height:.9; letter-spacing:-.06em; background:linear-gradient(90deg,var(--accent2),#d6c7ff,var(--accent)); -webkit-background-clip:text; color:transparent; }}
+h2 {{ margin:8px 0 10px; font-size:23px; letter-spacing:-.03em; }}
+h3 {{ margin:6px 0 10px; color:#d6c7ff; }}
+p {{ color:var(--muted); }}
+nav {{ display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }}
+nav a, button, .button, input[type='submit'] {{ border:0; border-radius:15px; padding:10px 14px; color:#07111d; background:linear-gradient(90deg,var(--accent2),#9bdcff); font-weight:800; box-shadow:0 10px 24px rgba(32,227,178,.18); text-decoration:none; cursor:pointer; }}
+nav a:nth-child(n+2), .button, button.secondary {{ color:var(--text); background:rgba(255,255,255,.10); box-shadow:none; border:1px solid rgba(255,255,255,.12); }}
+button.danger, .danger button, button[name='action'][value='reject'] {{ color:#fff; background:linear-gradient(90deg,var(--danger),#ff8fb0); }}
+.card {{ border:1px solid var(--border); border-radius:24px; padding:18px; margin:16px 0; background:linear-gradient(180deg,var(--panel),rgba(10,14,32,.82)); box-shadow:var(--shadow); backdrop-filter:blur(18px); }}
+.card:hover {{ border-color:rgba(138,92,255,.44); }}
+.grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }}
+.row {{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }}
+input, textarea, select {{ width:100%; box-sizing:border-box; padding:10px 11px; border:1px solid rgba(255,255,255,.14); border-radius:13px; background:rgba(255,255,255,.075); color:var(--text); outline:none; }}
+textarea {{ min-height:110px; }}
+select option {{ background:#101427; color:var(--text); }}
+label {{ display:block; color:#d7e3ff; font-weight:650; margin:10px 0; }}
+.muted {{ color:var(--muted); }}
+.pill {{ display:inline-flex; width:max-content; gap:8px; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px; padding:5px 9px; margin:2px; color:#d7e3ff; background:rgba(255,255,255,.075); font-size:.9em; }}
+table {{ width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:18px; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.045); }}
+td,th {{ border-bottom:1px solid rgba(255,255,255,.08); padding:10px; text-align:left; vertical-align:top; }}
+th {{ color:#d6c7ff; background:rgba(138,92,255,.10); }}
+tr:last-child td {{ border-bottom:0; }}
+code {{ color:#20e3b2; }}
+@media(max-width:760px){{ body{{padding:22px 12px 48px}} header{{padding:22px}} table{{display:block; overflow-x:auto}} }}
 </style></head><body>
 <header><h1>{esc(title)}</h1><p class='muted'>{esc(APP_TITLE)} · signed in as {esc(user)}</p>{nav}</header>
 {body}
