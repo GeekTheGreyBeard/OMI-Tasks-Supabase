@@ -177,6 +177,7 @@ def api_create_candidate(payload: CandidateIngest, user: str = Depends(auth)):
 def layout(title, body, user):
     nav = """
     <nav>
+      <a href='/tasks/home'>Home</a>
       <a href='/tasks/review'>Review</a>
       <a href='/tasks/primary'>Tasks</a>
       <a href='/tasks/new'>New task</a>
@@ -253,9 +254,36 @@ def task_form(action, item=None, candidate=None, submit_label="Save"):
     """
 
 
+def task_home_body():
+    candidates = one("select count(*) as c from tasks.task_candidates where review_status in ('new','needs_review','edited')") or {"c": 0}
+    active = one("select count(*) as c from tasks.task_items where status not in ('done','cancelled','trashed')") or {"c": 0}
+    queued = one("select count(*) as c from tasks.audit_log where action in ('api_candidate_ingest','create_task')") or {"c": 0}
+    trashed = one("select count(*) as c from tasks.task_items where status='trashed'") or {"c": 0}
+    return f"""
+    <section class='card' style='padding:28px; margin-bottom:20px'>
+      <div class='muted' style='text-transform:uppercase; letter-spacing:.16em; font-weight:800'>Omi Task Management</div>
+      <h1 style='margin-top:8px'>Omi <span style='background:linear-gradient(90deg,var(--accent2),#d6c7ff,var(--accent)); -webkit-background-clip:text; color:transparent'>Task Cockpit</span></h1>
+      <p class='muted' style='font-size:18px; max-width:780px'>A focused starting point for reviewing Omi-derived task evidence, promoting real work, creating direct tasks, and auditing submissions.</p>
+      <div class='row' style='margin-top:18px'>
+        <a class='button' href='/tasks/review'>Review task candidates</a>
+        <a class='button' href='/tasks/primary'>Primary tasks</a>
+        <a class='button' href='/tasks/new'>Create task</a>
+      </div>
+    </section>
+    <section class='grid'>
+      <a class='card' href='/tasks/review'><h2>{esc(candidates['c'])}</h2><p class='muted'>Candidates needing review</p></a>
+      <a class='card' href='/tasks/primary'><h2>{esc(active['c'])}</h2><p class='muted'>Active primary tasks</p></a>
+      <a class='card' href='/tasks/new'><h2>+</h2><p class='muted'>Create a direct task</p></a>
+      <a class='card' href='/tasks/submissions'><h2>{esc(queued['c'])}</h2><p class='muted'>Submission/audit events</p></a>
+      <a class='card' href='/tasks/trash'><h2>{esc(trashed['c'])}</h2><p class='muted'>Trashed tasks</p></a>
+    </section>
+    """
+
+
 @app.get("/", response_class=HTMLResponse)
-def root():
-    return RedirectResponse("/tasks/review", status_code=302)
+@app.get("/tasks/home", response_class=HTMLResponse)
+def root(user: str = Depends(auth)):
+    return layout("Omi Task Cockpit", task_home_body(), user)
 
 
 @app.get("/health")
