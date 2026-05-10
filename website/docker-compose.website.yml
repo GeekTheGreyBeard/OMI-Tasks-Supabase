@@ -1,0 +1,9 @@
+services:
+  omi-tasks-supabase-web:
+    build: ./taskReviewUi
+    container_name: omi-tasks-supabase-web
+    env_file:
+      - ./taskReviewUi/.env
+    ports:
+      - "8098:8098"
+    restart: unless-stopped
