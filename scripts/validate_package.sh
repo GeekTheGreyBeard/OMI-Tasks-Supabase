@@ -6,6 +6,8 @@ required=(
   README.md
   LICENSE
   install.sh
+  scripts/install_smoke_test.sh
+  scripts/validate_package.sh
   supabase/sql/001_omi_tasks_supabase_setup.sql
   website/docker-compose.test-postgres.yml
   website/docker-compose.website.yml
@@ -24,6 +26,7 @@ for rel in "${required[@]}"; do
   [[ -f "$ROOT/$rel" ]] || { echo "missing_required_file $rel" >&2; exit 1; }
 done
 
+bash -n "$ROOT/install.sh" "$ROOT/scripts/validate_package.sh" "$ROOT/scripts/install_smoke_test.sh"
 PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile "$ROOT/website/taskReviewUi/app.py"
 rm -rf "$ROOT/website/taskReviewUi/__pycache__"
 

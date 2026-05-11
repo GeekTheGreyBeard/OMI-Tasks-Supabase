@@ -11,12 +11,29 @@ Run:
 This checks:
 
 - FastAPI app Python syntax
+- shell syntax for installer/test scripts
 - expected project files
 - SQL schema file presence
 - Docker Compose file parse, when Docker Compose is available
 - optional schema application when `DATABASE_URL` and `psql` are available
 
-## Local install smoke test
+## Reproducible fresh-copy smoke test
+
+Run the release-gate smoke test from the repository root:
+
+```bash
+./scripts/install_smoke_test.sh
+```
+
+The script copies the current working tree into a temporary directory, removes any generated UI `.env`, validates the package, runs `./install.sh install --with-n8n --non-interactive`, waits for the services, checks the main authenticated routes, creates a candidate through the API, approves it through the form endpoint, verifies the approved task appears, and uninstalls the stack. It refuses to start if existing `omi-tasks-supabase` containers are present so it does not remove a running local stack unexpectedly.
+
+To keep a Markdown log:
+
+```bash
+SMOKE_LOG_FILE=/tmp/omi-tasks-supabase-smoke.md ./scripts/install_smoke_test.sh
+```
+
+## Manual local install smoke test
 
 ```bash
 ./install.sh install --non-interactive
