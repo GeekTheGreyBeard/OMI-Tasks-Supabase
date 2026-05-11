@@ -1,15 +1,17 @@
 # OMI-Tasks-Supabase install test
 
-- Test host: greydesk
-- Test started: 2026-05-11T16:05:04Z
-- Repository working tree: `/run/media/gtgb/GTGB-Files/Projects/personal/OMI-Tasks-Supabase`
-- Source commit at test start: `5216fee` (`Remove private branding from OMI task package`)
-- Test workspace: `/tmp/omi-tasks-supabase-smoke-20260511T160504Z-240348/OMI-Tasks-Supabase`
-- Test command: `SMOKE_LOG_FILE=/tmp/omi-smoke-final2.md ./scripts/install_smoke_test.sh`
+- Test host: temporary full Proxmox VM `9903` / `omi-releasegate-vm-20260511-1114`
+- VM IP: `10.0.250.91`
+- Test started: 2026-05-11T17:30:27Z
+- Test completed: 2026-05-11T17:35:17Z
+- Repository working tree: `~/releasegate/OMI-Tasks-Supabase` inside the VM
+- Source commit at test start: `b2e4b9096228a0ca1581f6451822835636d57008`
+- Test workspace: `/tmp/omi-tasks-supabase-smoke-20260511T173026Z-22863/OMI-Tasks-Supabase`
+- Test command: `SMOKE_LOG_FILE=~/releasegate/logs/omi-tasks-supabase-installTest-rerun.md ./scripts/install_smoke_test.sh`
 
 ## Scope
 
-No Proxmox VM release-gate script exists in this repository, so the strongest practical validation available from this host was a fresh temporary working-tree copy using local Docker Compose. The smoke test removed generated UI env from the copy, ran static package validation, installed Postgres + web UI + n8n, exercised routes and candidate workflow, then uninstalled and verified cleanup.
+Release-gate retest was run inside a dedicated temporary full QEMU VM in the Proxmox cluster. Greydesk only orchestrated over SSH. The smoke test ran the committed static package validation, installed Postgres + web UI + n8n with Docker Compose, exercised the web/API workflow, then uninstalled and verified cleanup.
 
 ## Static validation
 
@@ -84,7 +86,7 @@ Uninstall complete. Only repository files should remain.
 ```text
 - Passed checks: 20
 - Failed checks: 0
-- Test completed: 2026-05-11T16:05:13Z
+- Test completed: 2026-05-11T17:35:17Z
 
 **Overall result: PASS**
 ```
