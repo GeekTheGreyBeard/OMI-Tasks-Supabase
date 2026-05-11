@@ -1,17 +1,22 @@
 # OMI-Tasks-Supabase install test
 
-- Test host: temporary full Proxmox VM `9903` / `omi-releasegate-vm-20260511-1114`
-- VM IP: `10.0.250.91`
-- Test started: 2026-05-11T17:30:27Z
-- Test completed: 2026-05-11T17:35:17Z
-- Repository working tree: `~/releasegate/OMI-Tasks-Supabase` inside the VM
-- Source commit at test start: `b2e4b9096228a0ca1581f6451822835636d57008`
-- Test workspace: `/tmp/omi-tasks-supabase-smoke-20260511T173026Z-22863/OMI-Tasks-Supabase`
-- Test command: `SMOKE_LOG_FILE=~/releasegate/logs/omi-tasks-supabase-installTest-rerun.md ./scripts/install_smoke_test.sh`
+- Test host: Proxmox VM `9903` / `omi-releasegate-vm-20260511-1114`
+- Test VM IP: `10.0.250.91`
+- Proxmox node: `pm3`
+- Source template: `9501` / `Ubuntu-resolute-NFS`
+- Test started: 2026-05-11T17:41:00Z
+- Test completed: 2026-05-11T17:44:17Z
+- Repository: https://github.com/GeekTheGreyBeard/OMI-Tasks-Supabase.git
+- Branch: `main`
+- Source checkout: GitHub HEAD cloned inside the test VM
+- Source commit: `c1f3b6f94811c94d09df65754f23b775b8e1e756`
+- Test command: `./scripts/install_smoke_test.sh`
 
 ## Scope
 
-Release-gate retest was run inside a dedicated temporary full QEMU VM in the Proxmox cluster. Greydesk only orchestrated over SSH. The smoke test ran the committed static package validation, installed Postgres + web UI + n8n with Docker Compose, exercised the web/API workflow, then uninstalled and verified cleanup.
+Fresh release-gate validation was run in a disposable full Proxmox VM, not on greydesk. The test cloned GitHub HEAD inside the VM, ran static package validation, installed Postgres + Tasks Console web UI + n8n, exercised routes and the candidate approval workflow, then uninstalled and verified cleanup.
+
+The repository is private, so the VM clone used a GitHub token retrieved point-of-use through the PatriciAI Vaultwarden wrapper. The token was not printed into logs or stored in the repository.
 
 ## Static validation
 
@@ -26,7 +31,7 @@ package_validation_ok
 ## Install
 
 ```text
-Created .../website/taskReviewUi/.env
+Created /tmp/omi-tasks-supabase-smoke-20260511T174059Z-2274/OMI-Tasks-Supabase/website/taskReviewUi/.env
 Waiting for Postgres...
 Applying database schema...
 CREATE EXTENSION
@@ -86,7 +91,7 @@ Uninstall complete. Only repository files should remain.
 ```text
 - Passed checks: 20
 - Failed checks: 0
-- Test completed: 2026-05-11T17:35:17Z
+- Test completed: 2026-05-11T17:44:17Z
 
 **Overall result: PASS**
 ```
