@@ -2,6 +2,9 @@ import html
 import json
 import os
 import secrets
+import urllib.error
+import urllib.parse
+import urllib.request
 from typing import Any, Optional
 from uuid import UUID
 
@@ -15,6 +18,8 @@ DATABASE_URL = os.environ["DATABASE_URL"]
 UI_USER = os.environ.get("TASK_UI_USER", "admin")
 UI_PASSWORD = os.environ["TASK_UI_PASSWORD"]
 APP_TITLE = os.environ.get("APP_TITLE", "OMI Tasks Supabase")
+OMI_API_BASE = os.environ.get("OMI_API_BASE", "https://api.omi.me").rstrip("/")
+OMI_API_KEY = os.environ.get("OMI_API_KEY", "")
 
 PRIORITIES = ["low", "normal", "high", "urgent"]
 TASK_STATUSES = ["open", "in_progress", "blocked", "waiting", "done", "cancelled"]
@@ -174,6 +179,84 @@ def api_create_candidate(payload: CandidateIngest, user: str = Depends(auth)):
     return {"ok": True, "candidate_id": str(row["candidate_id"]), "review_status": row["review_status"]}
 
 
+def omi_request_action_items(limit=50, offset=0, completed="false"):
+    if not OMI_API_KEY:
+        raise HTTPException(500, "OMI_API_KEY is not configured for this task UI")
+    params = {"limit": str(max(1, min(int(limit or 50), 100))), "offset": str(max(0, int(offset or 0)))}
+    if completed in ("true", "false"):
+        params["completed"] = completed
+    url = f"{OMI_API_BASE}/v1/dev/user/action-items?{urllib.parse.urlencode(params)}"
+    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {OMI_API_KEY}", "Accept": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as res:
+            raw = res.read().decode("utf-8")
+            data = json.loads(raw or "[]")
+            if not isinstance(data, list):
+                raise HTTPException(502, "Omi action-items response was not a list")
+            return data
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", errors="replace")[:500]
+        raise HTTPException(e.code, f"Omi action-items request failed: {detail}")
+    except urllib.error.URLError as e:
+        raise HTTPException(502, f"Omi action-items request failed: {e.reason}")
+    except TimeoutError:
+        raise HTTPException(504, "Omi action-items request timed out")
+
+
+def candidate_from_omi_action_item(item, user):
+    description = str(item.get("description") or "").strip()
+    if not description:
+        return None, "missing description"
+    title = description.splitlines()[0].strip()[:240]
+    if len(title) < len(description):
+        title = title.rstrip(" .") + "…"
+    evidence = {
+        "provider": "omi",
+        "type": "action_item",
+        "action_item_id": item.get("id"),
+        "conversation_id": item.get("conversation_id"),
+        "completed": item.get("completed"),
+        "created_at": item.get("created_at"),
+        "updated_at": item.get("updated_at"),
+        "completed_at": item.get("completed_at"),
+        "raw": item,
+    }
+    payload = CandidateIngest(
+        source_key="omi",
+        source_event_id=str(item.get("id") or ""),
+        source_conversation_id=item.get("conversation_id"),
+        proposed_title=title,
+        proposed_description=description,
+        proposed_due_at=item.get("due_at"),
+        proposed_priority="normal",
+        proposed_tags=["omi", "action-item"],
+        confidence=None,
+        evidence=evidence,
+    )
+    row = api_create_candidate(payload, user)
+    return row, None
+
+
+def load_omi_form(result_html=""):
+    configured = "Configured" if OMI_API_KEY else "Missing OMI_API_KEY"
+    return f"""
+    <section class='card'>
+      <h2>Load tasks from Omi</h2>
+      <p class='muted'>Fetch Omi Developer API action items and stage them as task candidates for review. Nothing is promoted to the primary task list until you approve it.</p>
+      <p><span class='pill'>Omi API: {esc(configured)}</span><span class='pill'>Source: action items</span><span class='pill'>Review required</span></p>
+      <form method='post' action='/tasks/load-omi'>
+        <div class='grid'>
+          <label>Completed filter<select name='completed'><option value='false'>Open only</option><option value='true'>Completed only</option><option value='all'>All</option></select></label>
+          <label>Limit<input name='limit' type='number' min='1' max='100' value='50'></label>
+          <label>Offset<input name='offset' type='number' min='0' value='0'></label>
+        </div>
+        <p><button type='submit'>Load Omi action items</button></p>
+      </form>
+    </section>
+    {result_html}
+    """
+
+
 def layout(title, body, user):
     nav = """
     <nav>
@@ -181,6 +264,7 @@ def layout(title, body, user):
       <a href='/tasks/review'>Review</a>
       <a href='/tasks/primary'>Tasks</a>
       <a href='/tasks/new'>New task</a>
+      <a href='/tasks/load-omi'>Load from Omi</a>
       <a href='/tasks/submissions'>Submissions</a>
       <a href='/tasks/trash'>Trash</a>
       <a href='/tasks/status'>Status</a>
@@ -268,6 +352,7 @@ def task_home_body():
         <a class='button' href='/tasks/review'>Review task candidates</a>
         <a class='button' href='/tasks/primary'>Primary tasks</a>
         <a class='button' href='/tasks/new'>Create task</a>
+        <a class='button' href='/tasks/load-omi'>Load tasks from Omi</a>
         <a class='button' href='http://patriciai-ui.gtgb.io/'>Back to PatriciAI Home</a>
       </div>
     </section>
@@ -275,6 +360,7 @@ def task_home_body():
       <a class='card' href='/tasks/review'><h2>{esc(candidates['c'])}</h2><p class='muted'>Candidates needing review</p></a>
       <a class='card' href='/tasks/primary'><h2>{esc(active['c'])}</h2><p class='muted'>Active primary tasks</p></a>
       <a class='card' href='/tasks/new'><h2>+</h2><p class='muted'>Create a direct task</p></a>
+      <a class='card' href='/tasks/load-omi'><h2>⇣</h2><p class='muted'>Load Omi action items</p></a>
       <a class='card' href='/tasks/submissions'><h2>{esc(queued['c'])}</h2><p class='muted'>Submission/audit events</p></a>
       <a class='card' href='/tasks/trash'><h2>{esc(trashed['c'])}</h2><p class='muted'>Trashed tasks</p></a>
     </section>
@@ -457,6 +543,41 @@ def create_task(user: str = Depends(auth), title: str = Form(...), description: 
 @app.post("/tasks/new")
 def create_task_compat(user: str = Depends(auth), title: str = Form(...), description: str = Form(""), priority: str = Form("normal"), due_at: str = Form(""), tags: str = Form(""), notes: str = Form("")):
     return create_task(user, title, description, priority, due_at, tags, notes)
+
+
+@app.get("/load-omi", response_class=HTMLResponse)
+@app.get("/tasks/load-omi", response_class=HTMLResponse)
+def load_omi_page(user: str = Depends(auth)):
+    return layout("Load tasks from Omi", load_omi_form(), user)
+
+
+@app.post("/load-omi", response_class=HTMLResponse)
+@app.post("/tasks/load-omi", response_class=HTMLResponse)
+def load_omi_submit(user: str = Depends(auth), completed: str = Form("false"), limit: int = Form(50), offset: int = Form(0)):
+    completed_param = completed if completed in ("true", "false") else "all"
+    items = omi_request_action_items(limit=limit, offset=offset, completed=completed_param)
+    loaded = 0
+    skipped = []
+    for item in items:
+        row, reason = candidate_from_omi_action_item(item, user)
+        if row:
+            loaded += 1
+        else:
+            skipped.append({"id": item.get("id"), "reason": reason})
+    audit(user, "load_omi_action_items", "omi_action_items", after={"requested": len(items), "loaded": loaded, "skipped": skipped})
+    preview_rows = "".join(
+        f"<tr><td>{esc(i.get('id'))}</td><td>{esc(i.get('completed'))}</td><td>{esc(i.get('due_at'))}</td><td>{esc(i.get('description'))}</td></tr>"
+        for i in items[:25]
+    ) or "<tr><td colspan='4' class='muted'>No Omi action items returned.</td></tr>"
+    result = f"""
+    <section class='card'>
+      <h2>Loaded {esc(loaded)} of {esc(len(items))} Omi action items</h2>
+      <p class='muted'>Loaded items are staged as review candidates. Approve them from the review queue before they become primary tasks.</p>
+      <p class='row'><a class='button' href='/tasks/review'>Review loaded candidates</a><a class='button' href='/tasks/submissions'>View submissions</a></p>
+      <table><tr><th>Omi ID</th><th>Completed</th><th>Due</th><th>Description</th></tr>{preview_rows}</table>
+    </section>
+    """
+    return layout("Load tasks from Omi", load_omi_form(result), user)
 
 
 @app.get("/submissions", response_class=HTMLResponse)

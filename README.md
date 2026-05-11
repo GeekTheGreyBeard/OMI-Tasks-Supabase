@@ -54,6 +54,18 @@ flowchart LR
 
 ## What this system does
 
+
+### Load Omi action items
+
+The review UI includes `/tasks/load-omi`, a Basic Auth protected page that calls the Omi Developer API action-items endpoint and stages returned items as `tasks.task_candidates`. Loaded items remain review candidates; they are **not** promoted to primary tasks until approved.
+
+For live Omi loading, configure the task UI environment with:
+
+- `OMI_API_BASE` pointing at the Omi API, normally `https://api.omi.me`
+- `OMI_API_KEY` containing a valid Omi Developer API bearer token
+
+Do not commit `.env` files or real Omi API keys.
+
 ### Review task candidates
 
 The UI lists pending rows from `tasks.task_candidates`. For each candidate you can:
