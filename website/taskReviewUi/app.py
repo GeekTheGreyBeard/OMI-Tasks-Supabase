@@ -20,6 +20,8 @@ UI_PASSWORD = os.environ["TASK_UI_PASSWORD"]
 APP_TITLE = os.environ.get("APP_TITLE", "OMI Tasks Supabase")
 OMI_API_BASE = os.environ.get("OMI_API_BASE", "https://api.omi.me").rstrip("/")
 OMI_API_KEY = os.environ.get("OMI_API_KEY", "")
+HOME_LINK_URL = os.environ.get("HOME_LINK_URL", "").strip()
+HOME_LINK_TEXT = os.environ.get("HOME_LINK_TEXT", "Back to Home").strip() or "Back to Home"
 
 PRIORITIES = ["low", "normal", "high", "urgent"]
 TASK_STATUSES = ["open", "in_progress", "blocked", "waiting", "done", "cancelled"]
@@ -343,6 +345,7 @@ def task_home_body():
     active = one("select count(*) as c from tasks.task_items where status not in ('done','cancelled','trashed')") or {"c": 0}
     queued = one("select count(*) as c from tasks.audit_log where action in ('api_candidate_ingest','create_task')") or {"c": 0}
     trashed = one("select count(*) as c from tasks.task_items where status='trashed'") or {"c": 0}
+    home_link = f"<a class='button' href='{esc(HOME_LINK_URL)}'>{esc(HOME_LINK_TEXT)}</a>" if HOME_LINK_URL else ""
     return f"""
     <section class='card' style='padding:28px; margin-bottom:20px'>
       <div class='muted' style='text-transform:uppercase; letter-spacing:.16em; font-weight:800'>Omi Task Management</div>
@@ -353,7 +356,7 @@ def task_home_body():
         <a class='button' href='/tasks/primary'>Primary tasks</a>
         <a class='button' href='/tasks/new'>Create task</a>
         <a class='button' href='/tasks/load-omi'>Load tasks from Omi</a>
-        <a class='button' href='http://patriciai-ui.gtgb.io/'>Back to PatriciAI Home</a>
+        {home_link}
       </div>
     </section>
     <section class='grid'>

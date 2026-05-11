@@ -1,5 +1,5 @@
 {
-  "name": "PatriciAI Managed - OMI Tasks Candidate Intake",
+  "name": "OMI Tasks Candidate Intake",
   "nodes": [
     {
       "parameters": {
@@ -20,7 +20,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $json.body ?? $json;\nconst title = input.proposed_title || input.title || input.task || input.summary;\nif (!title) { throw new Error('Missing proposed_title/title/task/summary'); }\nreturn [{ json: {\n  source_key: input.source_key || 'omi',\n  source_event_id: input.source_event_id || input.event_id || input.id || null,\n  source_conversation_id: input.source_conversation_id || input.conversation_id || input.session_id || null,\n  proposed_title: String(title).slice(0, 500),\n  proposed_description: input.proposed_description || input.description || input.text || '',\n  proposed_due_at: input.proposed_due_at || input.due_at || null,\n  proposed_priority: input.proposed_priority || input.priority || 'normal',\n  proposed_tags: Array.isArray(input.proposed_tags) ? input.proposed_tags : (Array.isArray(input.tags) ? input.tags : []),\n  confidence: input.confidence ?? null,\n  evidence: { source: 'n8n.splat-i.io', original_payload: input }\n}}];"
+        "jsCode": "const input = $json.body ?? $json;\nconst title = input.proposed_title || input.title || input.task || input.summary;\nif (!title) { throw new Error('Missing proposed_title/title/task/summary'); }\nreturn [{ json: {\n  source_key: input.source_key || 'omi',\n  source_event_id: input.source_event_id || input.event_id || input.id || null,\n  source_conversation_id: input.source_conversation_id || input.conversation_id || input.session_id || null,\n  proposed_title: String(title).slice(0, 500),\n  proposed_description: input.proposed_description || input.description || input.text || '',\n  proposed_due_at: input.proposed_due_at || input.due_at || null,\n  proposed_priority: input.proposed_priority || input.priority || 'normal',\n  proposed_tags: Array.isArray(input.proposed_tags) ? input.proposed_tags : (Array.isArray(input.tags) ? input.tags : []),\n  confidence: input.confidence ?? null,\n  evidence: { source: process.env.N8N_TASK_SOURCE_NAME || 'local-n8n', original_payload: input }\n}}];"
       },
       "id": "normalize-omi-task-candidate",
       "name": "Normalize Candidate Payload",

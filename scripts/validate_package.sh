@@ -36,8 +36,36 @@ assert 'OMI-Tasks-Supabase' in readme
 assert 'create schema if not exists tasks' in sql.lower()
 assert 'tasks.task_candidates' in sql
 assert 'tasks.task_items' in sql
-for forbidden in ['OMI_API_KEY=', 'Rodney_Voice', 'vault.splat-i.io']:
-    assert forbidden not in readme, f'forbidden private/secrets wording found: {forbidden}'
+legacy_private_host = 'vault.' + 'splat' + '-i.io'
+for forbidden in ['OMI_API_KEY=', 'Rodney_Voice', legacy_private_host]:
+    assert forbidden not in readme, f'forbidden private/secrets wording found in README: {forbidden}'
+
+private_terms = [
+    'Patrici' + 'AI',
+    'patric' + 'iai-ui.gtgb.io',
+    'n8n.' + 'splat' + '-i.io',
+    legacy_private_host,
+]
+skip_dirs = {'.git', '__pycache__', 'node_modules', '.next', 'dist', 'build'}
+text_suffixes = {
+    '.md', '.txt', '.py', '.sh', '.sql', '.yml', '.yaml', '.json', '.toml', '.ini',
+    '.env', '.example', '.dockerignore', '.gitignore', '.license', ''
+}
+violations = []
+for path in root.rglob('*'):
+    rel_parts = path.relative_to(root).parts
+    if any(part in skip_dirs for part in rel_parts) or not path.is_file():
+        continue
+    suffixes = {s.lower() for s in path.suffixes}
+    if path.name.endswith('.env.example') or path.suffix.lower() in text_suffixes or suffixes & text_suffixes:
+        try:
+            text = path.read_text(errors='ignore')
+        except UnicodeDecodeError:
+            continue
+        for term in private_terms:
+            if term in text:
+                violations.append(f'{path.relative_to(root)}: {term}')
+assert not violations, 'forbidden private-domain/branding references found:\n' + '\n'.join(violations)
 print('static_content_ok')
 PY
 
