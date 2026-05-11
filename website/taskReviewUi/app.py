@@ -346,7 +346,7 @@ def task_home_body():
     return f"""
     <section class='card' style='padding:28px; margin-bottom:20px'>
       <div class='muted' style='text-transform:uppercase; letter-spacing:.16em; font-weight:800'>Omi Task Management</div>
-      <h1 style='margin-top:8px'>Omi <span style='background:linear-gradient(90deg,var(--accent2),#d6c7ff,var(--accent)); -webkit-background-clip:text; color:transparent'>Task Cockpit</span></h1>
+      <h1 style='margin-top:8px'>Omi <span style='background:linear-gradient(90deg,var(--accent2),#d6c7ff,var(--accent)); -webkit-background-clip:text; color:transparent'>Tasks Console</span></h1>
       <p class='muted' style='font-size:18px; max-width:780px'>A focused starting point for reviewing Omi-derived task evidence, promoting real work, creating direct tasks, and auditing submissions.</p>
       <div class='row' style='margin-top:18px'>
         <a class='button' href='/tasks/review'>Review task candidates</a>
@@ -370,7 +370,7 @@ def task_home_body():
 @app.get("/", response_class=HTMLResponse)
 @app.get("/tasks/home", response_class=HTMLResponse)
 def root(user: str = Depends(auth)):
-    return layout("Omi Task Cockpit", task_home_body(), user)
+    return layout("Omi Tasks Console", task_home_body(), user)
 
 
 @app.get("/health")
