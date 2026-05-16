@@ -1,22 +1,18 @@
 # OMI-Tasks-Supabase install test
 
-- Test host: Proxmox VM `9903` / `omi-releasegate-vm-20260511-1114`
-- Test VM IP: `10.0.250.91`
-- Proxmox node: `pm3`
-- Source template: `9501` / `Ubuntu-resolute-NFS`
-- Test started: 2026-05-11T17:41:00Z
-- Test completed: 2026-05-11T17:44:17Z
-- Repository: https://github.com/GeekTheGreyBeard/OMI-Tasks-Supabase.git
+This file records public-safe release-gate evidence for the installer smoke test.
+
+- Test environment: disposable clean Linux VM
+- Source checkout: GitHub repository HEAD
 - Branch: `main`
-- Source checkout: GitHub HEAD cloned inside the test VM
-- Source commit: `c1f3b6f94811c94d09df65754f23b775b8e1e756`
 - Test command: `./scripts/install_smoke_test.sh`
+- Latest recorded result: PASS
 
 ## Scope
 
-Fresh release-gate validation was run in a disposable full Proxmox VM, not on greydesk. The test cloned GitHub HEAD inside the VM, ran static package validation, installed Postgres + Tasks Console web UI + n8n, exercised routes and the candidate approval workflow, then uninstalled and verified cleanup.
+The release-gate validation clones a fresh checkout, runs static package validation, installs Postgres plus the Tasks Console web UI and optional n8n container, exercises the authenticated pages and candidate approval workflow, then uninstalls the stack and verifies cleanup.
 
-The repository is private, so the VM clone used a GitHub token retrieved point-of-use through the PatriciAI Vaultwarden wrapper. The token was not printed into logs or stored in the repository.
+The test uses synthetic task data only. It does not require or store real Omi conversations, personal tasks, API keys, or private environment details.
 
 ## Static validation
 
@@ -31,7 +27,7 @@ package_validation_ok
 ## Install
 
 ```text
-Created /tmp/omi-tasks-supabase-smoke-20260511T174059Z-2274/OMI-Tasks-Supabase/website/taskReviewUi/.env
+Created website/taskReviewUi/.env
 Waiting for Postgres...
 Applying database schema...
 CREATE EXTENSION
@@ -50,7 +46,6 @@ CREATE INDEX
 INSERT 0 3
 CREATE FUNCTION
 DO
-Image omi-tasks-supabase-omi-tasks-supabase-web Built
 omi-tasks-supabase-web Started
 omi-tasks-supabase-n8n Started
 Install complete.
@@ -91,7 +86,6 @@ Uninstall complete. Only repository files should remain.
 ```text
 - Passed checks: 20
 - Failed checks: 0
-- Test completed: 2026-05-11T17:44:17Z
 
-**Overall result: PASS**
+Overall result: PASS
 ```

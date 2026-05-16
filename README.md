@@ -250,6 +250,31 @@ where source_key = 'omi';
 
 ---
 
+## API candidate intake
+
+The review UI exposes a Basic Auth protected JSON endpoint for workflow-created candidates:
+
+```text
+POST /tasks/api/candidates
+```
+
+Minimal payload:
+
+```json
+{
+  "source_key": "omi",
+  "source_event_id": "omi-event-id",
+  "proposed_title": "Follow up on appointment scheduling",
+  "proposed_description": "Evidence-backed candidate extracted from Omi conversation text.",
+  "proposed_priority": "normal",
+  "proposed_tags": ["omi", "follow-up"],
+  "confidence": 0.72,
+  "evidence": {"source": "omi"}
+}
+```
+
+---
+
 ## Validation
 
 ```bash
@@ -272,27 +297,3 @@ The validation script checks Python syntax, expected files, public-facing docs w
 ## License
 
 MIT License. See [LICENSE](LICENSE).
-
-
-### API candidate intake
-
-The review UI exposes a Basic Auth protected JSON endpoint for workflow-created candidates:
-
-```text
-POST /tasks/api/candidates
-```
-
-Minimal payload:
-
-```json
-{
-  "source_key": "omi",
-  "source_event_id": "omi-event-id",
-  "proposed_title": "Follow up on appointment scheduling",
-  "proposed_description": "Evidence-backed candidate extracted from Omi conversation text.",
-  "proposed_priority": "normal",
-  "proposed_tags": ["omi", "follow-up"],
-  "confidence": 0.72,
-  "evidence": {"source": "omi"}
-}
-```

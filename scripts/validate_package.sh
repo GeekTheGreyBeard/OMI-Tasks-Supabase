@@ -39,15 +39,15 @@ assert 'OMI-Tasks-Supabase' in readme
 assert 'create schema if not exists tasks' in sql.lower()
 assert 'tasks.task_candidates' in sql
 assert 'tasks.task_items' in sql
-legacy_private_host = 'vault.' + 'splat' + '-i.io'
-for forbidden in ['OMI_API_KEY=', 'Rodney_Voice', legacy_private_host]:
+for forbidden in ['OMI_API_KEY=']:
     assert forbidden not in readme, f'forbidden private/secrets wording found in README: {forbidden}'
 
-private_terms = [
-    'Patrici' + 'AI',
-    'patric' + 'iai-ui.gtgb.io',
-    'n8n.' + 'splat' + '-i.io',
-    legacy_private_host,
+forbidden_literals = []
+forbidden_patterns = [
+    re.compile(r'github_pat_[A-Za-z0-9_]+'),
+    re.compile(r'gh[pousr]_[A-Za-z0-9_]+'),
+    re.compile(r'sk-[A-Za-z0-9]{20,}'),
+    re.compile(r'\b(?:10\.\d{1,3}|192\.168|172\.(?:1[6-9]|2\d|3[0-1]))\.\d{1,3}\.\d{1,3}\b'),
 ]
 skip_dirs = {'.git', '__pycache__', 'node_modules', '.next', 'dist', 'build'}
 text_suffixes = {
@@ -65,10 +65,13 @@ for path in root.rglob('*'):
             text = path.read_text(errors='ignore')
         except UnicodeDecodeError:
             continue
-        for term in private_terms:
+        for term in forbidden_literals:
             if term in text:
                 violations.append(f'{path.relative_to(root)}: {term}')
-assert not violations, 'forbidden private-domain/branding references found:\n' + '\n'.join(violations)
+        for pattern in forbidden_patterns:
+            if pattern.search(text):
+                violations.append(f'{path.relative_to(root)}: {pattern.pattern}')
+assert not violations, 'forbidden secret/private-environment references found:\n' + '\n'.join(violations)
 print('static_content_ok')
 PY
 
