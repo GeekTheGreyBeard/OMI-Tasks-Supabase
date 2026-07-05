@@ -297,3 +297,7 @@ The validation script checks Python syntax, expected files, public-facing docs w
 ## License
 
 MIT License. See [LICENSE](LICENSE).
+
+## Internal Documentation
+
+Obsidian documentation: `OpenClaw/Projects/OMI-Tasks-Supabase/`
